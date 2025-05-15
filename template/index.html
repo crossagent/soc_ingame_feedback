@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天应用</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            display: flex;
+            font-family: sans-serif;
+            margin: 0;
+            height: 100vh;
+            background-color: #f0f0f0;
+            overflow: hidden; /* Prevent scrollbars from body */
+        }
+        .chat-container {
+            flex-grow: 1;
+            height: 100%;
+            overflow: hidden; /* Ensure chat embed fits */
+            display: flex; /* Added to allow Dify to take available space */
+            flex-direction: column; /* Added for Dify */
+        }
+        .sidebar {
+            width: 200px; /* Adjust as needed */
+            min-width: 180px;
+            padding: 20px;
+            background-color: #e9ecef; /* Light grey sidebar */
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Space between buttons */
+            border-left: 1px solid #dee2e6; /* Separator line */
+        }
+        .sidebar button {
+            padding: 12px 15px;
+            border: 1px solid #ced4da; /* Button border */
+            background-color: #ffffff; /* White buttons */
+            color: #495057; /* Dark grey text */
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 14px;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .sidebar button:hover {
+            background-color: #f8f9fa; /* Lighter shade on hover */
+        }
+
+        /* Dify Chatbot specific styles */
+        #dify-chatbot-bubble-button {
+            /* This button might be hidden if defaultOpen is true */
+            background-color: #1C64F2 !important;
+        }
+        #dify-chatbot-bubble-window {
+            /* Adjust if necessary, Dify might control this */
+            width: 100% !important; /* Make it take full width of its container */
+            height: 100% !important; /* Make it take full height of its container */
+            position: relative !important; /* Ensure it stays within the flow */
+            box-shadow: none !important; /* Remove default shadow if it's embedded directly */
+            border-radius: 0 !important; /* Remove border radius if it's part of a larger layout */
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Dify Chatbot Embed Code -->
+        <script>
+            window.difyChatbotConfig = {
+                token: 'V8ZlM57uicx19JD0',
+                baseUrl: 'http://localhost', // This should be the Dify service URL
+                systemVariables: {
+                    _id: 'USER_ID_PLACEHOLDER', // Replace with actual user ID logic
+                    conversation_id: 'CONVERSATION_ID_PLACEHOLDER', // Replace/generate actual conversation ID
+                },
+                defaultOpen: true, // Open chat window by default
+                chatBotOpened: () => {
+                    console.log('Chatbot opened');
+                    // You can try to hide the bubble button if it's still visible
+                    const bubbleButton = document.getElementById('dify-chatbot-bubble-button');
+                    if (bubbleButton) {
+                        // bubbleButton.style.display = 'none';
+                    }
+                }
+            }
+        </script>
+        <script
+            src="http://localhost/embed.min.js" // This should be the Dify service URL
+            id="V8ZlM57uicx19JD0"
+            defer>
+        </script>
+    </div>
+    <div class="sidebar">
+        <button id="readClientLog">读取客户端日志</button>
+        <button id="readServerLog">读取服务器日志</button>
+        <button id="getScreenshot">获取截图</button>
+        <!-- Removed download button -->
+    </div>
+    <script src="/static/js/script.js"></script> 
+</body>
+</html>
