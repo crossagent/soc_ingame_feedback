@@ -3,12 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coze Web SDK Integration</title>
+    <!-- 在 title 中使用 session_name -->
+    <title>Coze Web SDK - {{ session_name }}</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="container">
         <h1>Welcome to the In-Game Feedback System</h1>
+        <!-- 显示 session_name 和其他信息 -->
+        <p>Session: <strong>{{ session_name }}</strong></p>
+        {% if server_name %} <p>Server: {{ server_name }}</p> {% endif %}
+        {% if version %} <p>Version: {{ version }}</p> {% endif %}
+        {% if user_id %} <p>User ID: {{ user_id }}</p> {% endif %}
+        {% if map_name %} <p>Map: {{ map_name }}</p> {% endif %}
+
+        <div id="coze-chat-error" style="color: red; margin-bottom: 15px;"></div>
 
         <form id="bug-report-form">
             <h2>Bug Report</h2>
@@ -36,21 +45,109 @@
 
     <script src="https://sf-cdn.coze.com/obj/unpkg-va/flow-platform/chat-app-sdk/1.2.0-beta.6/libs/oversea/index.js"></script>
     <script>
-      new CozeWebSDK.WebChatClient({
-        config: {
-          bot_id: '7508977077211840518',
-        },
-        componentProps: {
-          title: 'Coze',
-        },
-        auth: {
-          type: 'token',
-          token: 'pat_WjcWwmAFN2Z30jOHmdUGVAKztxLfVD4GZ4f0Hz3VNNSxO84xsNCYromlunoqCBij',
-          onRefreshToken: function () {
-            return 'pat_WjcWwmAFN2Z30jOHmdUGVAKztxLfVD4GZ4f0Hz3VNNSxO84xsNCYromlunoqCBij'
+      // 从 Jinja2 模板获取 session_name
+      const currentSessionName = "{{ session_name }}";
+      // 从您的 Coze Bot 配置中获取
+      const cozeBotId = '7508977077211840518'; // 请确保这是您正确的 Bot ID
+      const errorDisplayElement = document.getElementById('coze-chat-error');
+
+      async function fetchCozeToken(sessionName) {
+        try {
+          errorDisplayElement.textContent = ''; // 清除旧的错误信息
+          console.log(`Fetching Coze token for session: ${sessionName}`);
+          const response = await fetch(`/sessions/${sessionName}/status`);
+          
+          if (!response.ok) {
+            let errorDetail = `HTTP error ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorDetail = errorData.error || errorData.detail || `Server responded with ${response.status}`;
+            } catch (e) { 
+                // 如果响应体不是JSON或为空，使用状态文本
+                errorDetail = response.statusText || errorDetail;
+            }
+            console.error('Error fetching Coze token:', response.status, errorDetail);
+            throw new Error(`Failed to fetch token: ${errorDetail}`);
           }
+
+          const data = await response.json();
+          if (!data.initialized || !data.access_token) {
+            console.error('Session not initialized or token missing from /status response:', data);
+            throw new Error(data.error || 'Session initialization failed or token is missing from server response.');
+          }
+          console.log('Successfully fetched Coze token for session:', sessionName);
+          return data.access_token;
+
+        } catch (error) {
+          console.error('Exception during fetchCozeToken:', error);
+          errorDisplayElement.textContent = `Error initializing chat: ${error.message}. Please check console or try refreshing.`;
+          throw error; // 重新抛出错误，以便调用者可以处理
         }
-      });
+      }
+
+      async function initializeCozeSDK() {
+        try {
+            const initialToken = await fetchCozeToken(currentSessionName);
+
+            if (!initialToken) {
+                // fetchCozeToken 内部已经处理了错误显示
+                console.error('Cannot initialize Coze SDK: No token was retrieved.');
+                return; // 阻止进一步执行
+            }
+
+            console.log('Initializing Coze Web SDK with token for session:', currentSessionName);
+            new CozeWebSDK.WebChatClient({
+              config: {
+                // Coze 文档推荐使用 botId (camelCase)
+                botId: cozeBotId, 
+                isIframe: false, // 推荐设置为 false 以规避某些环境的限制 (例如小程序)
+              },
+              componentProps: {
+                title: 'In-Game Feedback Assistant', // 更具描述性的标题
+                // width: 400, // 可选：自定义宽度
+                // height: 600, // 可选：自定义高度
+              },
+              auth: {
+                type: 'token', // 使用 JWT 进行鉴权
+                token: initialToken,
+                onRefreshToken: async function () {
+                  console.log('Coze SDK requesting token refresh for session:', currentSessionName);
+                  try {
+                    // 注意：此函数需要返回新的 token 字符串
+                    const newToken = await fetchCozeToken(currentSessionName);
+                    if (!newToken) {
+                        console.error('Failed to refresh token: fetchCozeToken returned no token.');
+                        // 根据 Coze SDK 的行为，返回 null 或旧 token 可能导致问题
+                        // 理想情况下，应能成功获取新 token
+                        return null; // 或者抛出错误，让 SDK 处理
+                    }
+                    console.log('Coze token refreshed successfully for session:', currentSessionName);
+                    return newToken;
+                  } catch (error) {
+                    console.error('Failed to refresh Coze token:', error);
+                    errorDisplayElement.textContent = `Chat session expired or invalid: ${error.message}. Please refresh.`;
+                    // 返回 null 或抛出错误，具体取决于 SDK 如何处理刷新失败
+                    return null; 
+                  }
+                }
+              }
+            });
+            console.log('Coze Web SDK initialized successfully for session:', currentSessionName);
+        } catch (error) {
+            // fetchCozeToken 内部的错误已显示，这里记录更高级别的初始化失败
+            console.error('Failed to initialize Coze SDK due to an error during token fetch or SDK setup:', error);
+            if (!errorDisplayElement.textContent) { // 如果 fetchCozeToken 未设置错误信息
+                 errorDisplayElement.textContent = `Critical error initializing chat SDK: ${error.message}`;
+            }
+        }
+      }
+
+      // 确保在 DOM 加载完成后执行 SDK 初始化
+      if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initializeCozeSDK);
+      } else {
+          initializeCozeSDK(); // DOM 已加载
+      }
     </script>
 
     <script src="/static/js/script.js"></script>

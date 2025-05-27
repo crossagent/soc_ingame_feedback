@@ -60,10 +60,12 @@ def get_or_create_session_token(session_name: str) -> Dict:
             return session_data
     
     try:
-        # 生成新的 access_token (TTL: 1小时)
-        oauth_token = jwt_oauth_app.get_access_token(ttl=3600)
-        
+        # 生成新的 access_token (TTL: 1小时)，并传入 session_name
+        oauth_token = jwt_oauth_app.get_access_token(ttl=3600, session_name=session_name)
+
         # 创建 Coze 客户端
+        # Note: The Coze client itself doesn't need the session_name here,
+        # as the session is tied to the access token generated above.
         coze_client = Coze(auth=JWTAuth(oauth_app=jwt_oauth_app), base_url=coze_api_base)
         
         # 缓存 session 数据

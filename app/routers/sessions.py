@@ -80,6 +80,7 @@ async def get_session_status_api(session_name: str):
         return {
             "session_name": session_name,
             "initialized": True,
+            "access_token": session_data["access_token"], # Include the access token
             "access_token_expires_at": session_data["expires_at"],
             "message": "Session is active."
         }
@@ -97,4 +98,3 @@ async def get_session_status_api(session_name: str):
             "initialized": False,
             "error": "An unexpected error occurred while fetching session status."
         }
-
