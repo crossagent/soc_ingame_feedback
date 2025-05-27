@@ -4,8 +4,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
 import os
+from app.routes import auth
 
 app = FastAPI()
+
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 # 获取当前文件所在的目录
 current_file_path = os.path.dirname(os.path.abspath(__file__))
