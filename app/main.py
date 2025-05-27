@@ -1,15 +1,14 @@
-from fastapi import FastAPI, Request, Query
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
 import os
-from app import auth
+from app.routers import sessions as sessions_router
 
 app = FastAPI()
 
-# 包含 auth 路由
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(sessions_router.router, tags=["sessions"])
 
 # 获取当前文件所在的目录
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -23,26 +22,6 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # 设置模板目录
 templates = Jinja2Templates(directory=templates_dir)
-
-@app.get("/sessions/{session_name}", response_class=HTMLResponse)
-async def start_session(
-    request: Request,
-    session_name: str,
-    server_name: str | None = Query(None, alias="serverName"),
-    version: str | None = Query(None),
-    user_id: str | None = Query(None, alias="userId"),
-    map_name: str | None = Query(None, alias="mapName"),
-):
-    context = {
-        "request": request,
-        "session_name": session_name,
-        "server_name": server_name,
-        "version": version,
-        "user_id": user_id,
-        "map_name": map_name,
-    }
-    print(f"Accessing session: {session_name}, Server: {server_name}, Version: {version}, User: {user_id}, Map: {map_name}")
-    return templates.TemplateResponse("index.html", context)
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):

@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, HTTPException
+from fastapi import HTTPException
 from typing import Dict
 import time
 
@@ -84,30 +84,3 @@ def get_coze_client_for_session(session_name: str) -> Coze:
     """获取指定 session 的 Coze 客户端"""
     session_data = get_or_create_session_token(session_name)
     return session_data["coze_client"]
-
-
-router = APIRouter()
-
-@router.post("/sessions/{session_name}/initialize")
-async def initialize_session(session_name: str):
-    """初始化 session，获取并缓存 access_token"""
-    try:
-        session_data = get_or_create_session_token(session_name)
-        return {
-            "message": "Session initialized successfully",
-            "session_name": session_name,
-            "expires_at": session_data["expires_at"]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error initializing session: {e}")
-
-@router.get("/get_coze_client")
-async def get_coze_client():
-    """
-    Legacy API endpoint - 建议使用新的 session-based API
-    """
-    try:
-        oauth_token = jwt_oauth_app.get_access_token(ttl=3600)
-        return {"message": "Coze client initialized successfully", "access_token": oauth_token.access_token}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during JWT authentication: {e}")
