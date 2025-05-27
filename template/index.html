@@ -7,8 +7,33 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <h1>Welcome to the In-Game Feedback System</h1>
-    
+    <div class="container">
+        <h1>Welcome to the In-Game Feedback System</h1>
+
+        <form id="bug-report-form">
+            <h2>Bug Report</h2>
+            <div class="form-group">
+                <label for="bug-title">Bug Title:</label>
+                <input type="text" id="bug-title" name="bug-title" required>
+            </div>
+            <div class="form-group">
+                <label for="bug-description">Description:</label>
+                <textarea id="bug-description" name="bug-description" rows="4" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="steps-to-reproduce">Steps to Reproduce:</label>
+                <textarea id="steps-to-reproduce" name="steps-to-reproduce" rows="4" required></textarea>
+            </div>
+            <button type="submit">Submit Bug Report</button>
+        </form>
+
+        <div class="tool-buttons">
+            <button id="log-button">Extract Logs</button>
+            <button id="video-button">Record Video</button>
+            <button id="screenshot-button">Take Screenshot</button>
+        </div>
+    </div>
+
     <script src="https://sf-cdn.coze.com/obj/unpkg-va/flow-platform/chat-app-sdk/1.2.0-beta.6/libs/oversea/index.js"></script>
     <script>
       new CozeWebSDK.WebChatClient({
