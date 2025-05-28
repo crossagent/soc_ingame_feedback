@@ -38,6 +38,7 @@
 
         <div class="tool-buttons">
             <button id="log-button">Extract Logs</button>
+            <button id="get-bug-info-button">获取 Bug 信息</button>
             <button id="video-button">Record Video</button>
             <button id="screenshot-button">Take Screenshot</button>
         </div>
@@ -96,6 +97,7 @@
             }
 
             console.log('Initializing Coze Web SDK with token for session:', currentSessionName);
+            console.log('with token:', initialToken);
             new CozeWebSDK.WebChatClient({
               config: {
                 // Coze 文档推荐使用 botId (camelCase)

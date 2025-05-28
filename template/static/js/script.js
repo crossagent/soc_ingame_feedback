@@ -39,4 +39,34 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add functionality to take screenshot
         });
     }
+
+    const getBugInfoButton = document.getElementById('get-bug-info-button');
+    if (getBugInfoButton) {
+        getBugInfoButton.addEventListener('click', async function() {
+            console.log('获取 Bug 信息 button clicked');
+            try {
+                const response = await fetch(`/sessions/${currentSessionName}/bug_info`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const bugInfo = await response.json();
+                console.log('Fetched Bug Info:', bugInfo);
+
+                // Populate the form fields
+                if (bugInfo.bug_title) {
+                    document.getElementById('bug-title').value = bugInfo.bug_title;
+                }
+                if (bugInfo.bug_description) {
+                    document.getElementById('bug-description').value = bugInfo.bug_description;
+                }
+                if (bugInfo.steps_to_reproduce) {
+                    document.getElementById('steps-to-reproduce').value = bugInfo.steps_to_reproduce;
+                }
+
+            } catch (error) {
+                console.error('Error fetching bug info:', error);
+                // Optionally display an error message to the user
+            }
+        });
+    }
 });

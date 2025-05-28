@@ -3,6 +3,7 @@ from fastapi import APIRouter, Request, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from app.auth import get_or_create_session_token
+from cozepy import Coze # 移除 Auth
 
 router = APIRouter()
 
@@ -98,3 +99,42 @@ async def get_session_status_api(session_name: str):
             "initialized": False,
             "error": "An unexpected error occurred while fetching session status."
         }
+
+@router.get("/sessions/{session_name}/bug_info")
+async def get_bug_info(session_name: str):
+    try:
+        session_data = get_or_create_session_token(session_name)
+        bot_id = '7508977077211840518'
+        coze_client: Coze = session_data["coze_client"]
+
+        # Call the Get variable values API
+        # Fetching all variables for now, frontend will pick what it needs
+        # Changed from .list to .retrieve and added keywords parameter
+        variables_response = coze_client.variables.retrieve(
+            bot_id=bot_id,
+            connector_id='999', # Assuming None for default connector
+            connector_uid=session_name, # Use session_name as connector_uid
+            keywords=[] # Assuming empty list fetches all variables
+        )
+
+        # Process the response and extract relevant bug info
+        bug_info = {}
+        if variables_response and variables_response.data and variables_response.data.items:
+            for item in variables_response.data.items:
+                # Assuming variable names in Coze match the form field IDs
+                if item.keyword in ["bug-title", "bug-description", "steps-to-reproduce"]:
+                     # Convert keyword to use underscores for consistency with frontend JS
+                    js_key = item.keyword.replace('-', '_')
+                    bug_info[js_key] = item.value
+                # Also include variables with underscores if they exist
+                elif item.keyword in ["bug_title", "bug_description", "steps_to_reproduce"]:
+                    bug_info[item.keyword] = item.value
+
+
+        return bug_info
+
+    except HTTPException as e:
+        raise e # Re-raise FastAPI HTTPExceptions
+    except Exception as e:
+        print(f"Error fetching bug info for session {session_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch bug information from Coze.")
