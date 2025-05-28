@@ -18,6 +18,13 @@ try:
     project_root = os.path.dirname(app_dir)
     templates_dir = os.path.join(project_root, "template")
 
+    # Load COZE_BOT_ID from environment variable
+    COZE_BOT_ID = os.getenv("COZE_BOT_ID")
+    if not COZE_BOT_ID:
+        print("Warning: COZE_BOT_ID environment variable not set. Using default or expect error.")
+        # You might want to set a default or raise an error if it's critical
+        # COZE_BOT_ID = "your_default_bot_id_here" 
+
     if not os.path.isdir(templates_dir):
         # Fallback for safety, though the above should be robust
         templates_dir = os.path.join(os.getcwd(), "template") # Assumes running from project root if above fails
@@ -66,6 +73,7 @@ async def get_session_page(
         "version": version,
         "user_id": user_id,
         "map_name": map_name,
+        "coze_bot_id": COZE_BOT_ID,  # Pass bot_id to the template
     }
     try:
         return templates.TemplateResponse("index.html", context)
@@ -104,7 +112,11 @@ async def get_session_status_api(session_name: str):
 async def get_bug_info(session_name: str):
     try:
         session_data = get_or_create_session_token(session_name)
-        bot_id = '7508977077211840518'
+        # Use the COZE_BOT_ID from environment
+        bot_id = COZE_BOT_ID 
+        if not bot_id:
+            raise HTTPException(status_code=500, detail="COZE_BOT_ID is not configured in the environment.")
+        
         coze_client: Coze = session_data["coze_client"]
 
         # Call the Get variable values API

@@ -44,12 +44,11 @@
         </div>
     </div>
 
-    <script src="https://sf-cdn.coze.com/obj/unpkg-va/flow-platform/chat-app-sdk/1.2.0-beta.6/libs/oversea/index.js"></script>
+    <script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.6/libs/cn/index.js"></script>
     <script>
-      // 从 Jinja2 模板获取 session_name
+      // 从 Jinja2 模板获取 session_name 和 coze_bot_id
       const currentSessionName = "{{ session_name }}";
-      // 从您的 Coze Bot 配置中获取
-      const cozeBotId = '7508977077211840518'; // 请确保这是您正确的 Bot ID
+      const cozeBotId = "{{ coze_bot_id }}"; // 从模板上下文中获取 Bot ID
       const errorDisplayElement = document.getElementById('coze-chat-error');
 
       async function fetchCozeToken(sessionName) {
@@ -59,7 +58,7 @@
           const response = await fetch(`/sessions/${sessionName}/status`);
           
           if (!response.ok) {
-            let errorDetail = `HTTP error ${response.status}`;
+            let errorDetail = `HTTP error ${response.status}`;首先
             try {
                 const errorData = await response.json();
                 errorDetail = errorData.error || errorData.detail || `Server responded with ${response.status}`;
@@ -88,6 +87,9 @@
 
       async function initializeCozeSDK() {
         try {
+            console.log('Initializing Coze Web SDK for session:', currentSessionName);
+            
+            // 恢复 fetchCozeToken 的调用以获取初始 token
             const initialToken = await fetchCozeToken(currentSessionName);
 
             if (!initialToken) {
@@ -95,45 +97,41 @@
                 console.error('Cannot initialize Coze SDK: No token was retrieved.');
                 return; // 阻止进一步执行
             }
+            console.log('with token:', initialToken); 
 
-            console.log('Initializing Coze Web SDK with token for session:', currentSessionName);
-            console.log('with token:', initialToken);
             new CozeWebSDK.WebChatClient({
               config: {
-                // Coze 文档推荐使用 botId (camelCase)
+                // Coze 文档推荐使用 botId (camelCase)，但您提供的示例是 bot_id
+                // 这里我们继续使用 botId 并更新其值
                 botId: cozeBotId, 
                 isIframe: false, // 推荐设置为 false 以规避某些环境的限制 (例如小程序)
               },
               componentProps: {
-                title: 'In-Game Feedback Assistant', // 更具描述性的标题
+                title: 'Coze', // 更新标题
                 // width: 400, // 可选：自定义宽度
                 // height: 600, // 可选：自定义高度
               },
-              userInfo: {
-                id: 'test',
+              userInfo: { // userInfo 保持不变，除非您希望更改
+                id: currentSessionName,
                 url: 'test',
                 nickname: 'test',
               },
               auth: {
                 type: 'token', // 使用 JWT 进行鉴权
-                token: initialToken,
-                onRefreshToken: async function () {
+                token: initialToken, // 使用 fetchCozeToken 获取的初始 token
+                onRefreshToken: async function () { // 恢复 onRefreshToken 的逻辑
                   console.log('Coze SDK requesting token refresh for session:', currentSessionName);
                   try {
-                    // 注意：此函数需要返回新的 token 字符串
                     const newToken = await fetchCozeToken(currentSessionName);
                     if (!newToken) {
                         console.error('Failed to refresh token: fetchCozeToken returned no token.');
-                        // 根据 Coze SDK 的行为，返回 null 或旧 token 可能导致问题
-                        // 理想情况下，应能成功获取新 token
-                        return null; // 或者抛出错误，让 SDK 处理
+                        return null; 
                     }
                     console.log('Coze token refreshed successfully for session:', currentSessionName);
                     return newToken;
                   } catch (error) {
                     console.error('Failed to refresh Coze token:', error);
                     errorDisplayElement.textContent = `Chat session expired or invalid: ${error.message}. Please refresh.`;
-                    // 返回 null 或抛出错误，具体取决于 SDK 如何处理刷新失败
                     return null; 
                   }
                 }

@@ -76,7 +76,7 @@ def get_or_create_session_token(session_name: str) -> Dict:
         }
         session_cache[session_name] = session_data
         
-        print(f"Created new session token for: {session_name}")
+        print(f"Created new session token for: {session_name}，access_token: {oauth_token.access_token}, expires_at: {session_data['expires_at']}")
         return session_data
         
     except Exception as e:
